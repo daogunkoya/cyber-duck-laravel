@@ -9,7 +9,23 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-                    @todo
+                    <form method="POST" action="{{ route('shipping.update') }}">
+                        @csrf
+                        @method('PUT')
+                        
+                        <div>
+                            <x-input-label for="shipping_cost" :value="__('Shipping Cost (£)')" />
+                            <x-text-input id="shipping_cost" name="shipping_cost" type="number" step="0.01" min="0" 
+                                class="mt-1 block w-full" value="{{ config('coffee.shipping_cost') }}" required />
+                            <x-input-error :messages="$errors->get('shipping_cost')" class="mt-2" />
+                        </div>
+
+                        <div class="flex items-center justify-end mt-6">
+                            <x-primary-button>
+                                {{ __('Update Shipping Cost') }}
+                            </x-primary-button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

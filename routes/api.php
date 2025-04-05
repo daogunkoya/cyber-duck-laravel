@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CoffeeSaleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,5 +16,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    Route::post('/coffee-sales/calculate', [CoffeeSaleController::class, 'calculate']);
+    Route::post('/coffee-sales', [CoffeeSaleController::class, 'store']);
+    Route::get('/coffee-products', fn() => \App\Models\CoffeeProduct::all());
+
     return $request->user();
 });
