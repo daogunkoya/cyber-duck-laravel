@@ -18,7 +18,7 @@ class CoffeeProduct extends Model
      */
     protected $fillable = [
         'name',
-        'profit_margin',
+       // 'profit_margin',
         'description',
     ];
 
