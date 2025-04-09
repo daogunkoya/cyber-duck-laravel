@@ -20,13 +20,14 @@ beforeEach(function () {
         'name' => 'Gold Coffee'
     ]);
     
+    
     // Mock the service in container
-    $this->mock(PriceCalculationService::class, function ($mock) {
-        $mock->shouldReceive('calculateSellingPrice')
-            ->andReturnUsing(function ($qty, $cost) {
-                return round(($qty * $cost) / (1 - 0.25) + 10.00, 2);
-            });
-    });
+    // $this->mock(PriceCalculationService::class, function ($mock) {
+    //     $mock->shouldReceive('calculateSellingPrice')
+    //         ->andReturnUsing(function ($qty, $cost) {
+    //             return round(($qty * $cost) / (1 - 0.25) + 10.00, 2);
+    //         });
+    // });
 });
 
 test('store creates a new sale with correct calculated price', function () {

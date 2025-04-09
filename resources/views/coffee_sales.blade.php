@@ -10,9 +10,19 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
                     <!-- Form with all elements in one row -->
-                    <div class="flex items-end gap-4 mb-8">
+                    <div class="flex items-end gap-4 mb-8 ">
                         <!-- Product Select -->
-                        
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700">Product</label>
+                            <select x-model="form.product_id" 
+                                    @change="calculateSellingPrice()"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" 
+                                    required>
+                                <template x-for="product in coffeeProducts" :key="product.coffeeProductId">
+                                    <option :value="product.coffeeProductId" :data-profit-margin="product.profitMargin" x-text="product.name"></option>
+                                </template>
+                            </select>
+                        </div>
                         
                         <!-- Quantity Input -->
                         <div class="flex-1">
@@ -46,7 +56,7 @@
                         <div class="flex-1 pb-[20px]">
                             <button @click="recordSale()"
                                     :disabled="isSubmitting"
-                                    class="w-full h-[42px] inline-flex justify-center items-center mt-5 py-2 px-4  border-2 border-indigo-700 shadow-sm text-sm font-medium rounded-md text-gray-800 bg-indigo-200 hover:bg-indigo-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    class="w-full h-[42px] inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-gray-800 bg-indigo-200 hover:bg-indigo-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                                     x-text="isSubmitting ? 'Processing...' : 'Record Sale'">
                             </button>
                         </div>
@@ -54,11 +64,12 @@
 
                     <!-- Sales Table -->
                     <div>
-                        <h3 class="text-lg font-medium text-gray-900 mb-4 mt-3">Previous Sales</h3>
+                        <h3 class=" mt-9 text-lg font-medium text-gray-900 mb-4">Previous Sales</h3>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price (£)</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selling Price (£)</th>
@@ -68,6 +79,7 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="sale in sales" :key="sale.id">
                                         <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="sale.product_name"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="sale.quantity"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="sale.unit_cost"></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="sale.selling_price"></td>
@@ -101,7 +113,7 @@
                 
                 init() {
                     if (this.coffeeProducts.length > 0) {
-                        this.form.product_id = this.coffeeProducts[0].id;
+                        this.form.product_id = this.coffeeProducts[0].coffeeProductId;
                     }
                     this.calculateSellingPrice();
                 },

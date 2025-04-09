@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Services\PriceCalculationService;
+use App\Repositories\CoffeeSaleRepository;
+use App\Contracts\CoffeeSaleRepositoryInterface;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,10 +19,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(PriceCalculationService::class, function () {
             return new PriceCalculationService(
-                config('coffee.profit_margin'),
                 config('coffee.shipping_cost')
             );
         });
+
+        $this->app->bind(
+            CoffeeSaleRepositoryInterface::class, 
+            CoffeeSaleRepository::class
+        );
     }
 
     /**

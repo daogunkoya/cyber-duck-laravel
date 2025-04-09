@@ -1,43 +1,57 @@
 <?php
-// tests/Unit/Services/PriceCalculationServiceTest.php
 
+use App\DTO\CoffeeProductDto;
 use App\Services\PriceCalculationService;
+use App\Exceptions\InvalidProfitMarginException;
 
-test('calculates selling price correctly with injected values', function () {
-    $service = new PriceCalculationService(0.25, 10.00);
-    $price = $service->calculateSellingPrice(5, 10.00);
+uses()
+    ->beforeEach(function () {
+        $this->goldCoffee = new CoffeeProductDto(
+            coffeeProductId: 1,
+            name: 'Gold Coffee',
+            profitMargin: 0.2,
+            description: "Gold Coffee is a premium coffee with a rich and complex flavor profile.",
+            isActive: true
+        );
 
-    // (5*10)/(1-0.25) + 10 = 76.666... rounded to 76.67
-    expect($price)->toBe(76.67);
+        $this->service = new PriceCalculationService(shippingCost: 10.00);
+    });
+
+it('calculates selling price with 0.2 profit margin and £2 shipping', function () {
+    $service = new PriceCalculationService(shippingCost: 2.00);
+    $price = $service->calculateSellingPrice($this->goldCoffee, 10, 1.00); // cost: £10
+
+    expect($price)->toBe(14.5); // (10 / 0.8) + 2 = 14.5
 });
 
-test('calculates selling price correctly with different values', function () {
-    $service = new PriceCalculationService(0.15, 5.00);
-    $price = $service->calculateSellingPrice(3, 12.50);
+it('calculates selling price correctly for Gold Coffee', function () {
+    $price = $this->service->calculateSellingPrice($this->goldCoffee, 5, 10.00); // cost: £50
 
-    // (3*12.50)/(1-0.15) + 5 = 49.117... rounded to 49.12
-    expect($price)->toBe(49.12);
+    expect($price)->toBe(72.5); // (50 / 0.8) + 10 = 72.5
 });
 
-test('handles zero quantity gracefully', function () {
-    $service = new PriceCalculationService(0.25, 10.00);
-    $price = $service->calculateSellingPrice(0, 10.00);
+it('calculates selling price correctly for Arabic Coffee with 15% margin', function () {
+    $arabicCoffee = new CoffeeProductDto(
+        coffeeProductId: 2,
+        name: 'Arabic Coffee',
+        profitMargin: 0.15,
+        description: "Arabic Coffee has a distinct, smooth flavor profile.",
+        isActive: true
+    );
 
-    // Just shipping cost
-    expect($price)->toBe(10.00);
+    $price = $this->service->calculateSellingPrice($arabicCoffee, 5, 10.00); // cost: £50
+
+    expect($price)->toBe(68.82); // (50 / 0.85) + 10 = ~68.82
 });
 
-test('handles minimum unit cost', function () {
-    $service = new PriceCalculationService(0.25, 10.00);
-    $price = $service->calculateSellingPrice(1, 0.01);
+it('throws exception for invalid profit margin >= 1', function () {
+    $invalidProduct = new CoffeeProductDto(
+        coffeeProductId: 3,
+        name: 'Broken Coffee',
+        profitMargin: 1.15,
+        description: "Invalid profit margin test.",
+        isActive: true
+    );
 
-    // (1*0.01)/(1-0.25) + 10 = 10.013... rounded to 10.01
-    expect($price)->toBe(10.01);
-});
-
-test('handles maximum values without errors', function () {
-    $service = new PriceCalculationService(0.25, 10.00);
-    $price = $service->calculateSellingPrice(PHP_INT_MAX, PHP_FLOAT_MAX);
-    
-    expect($price)->toBeFloat();
-});
+    $this->service->calculateSellingPrice($invalidProduct, 1, 10.00);
+})->throws(\InvalidArgumentException::class);

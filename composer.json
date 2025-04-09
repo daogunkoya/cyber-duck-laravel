@@ -10,7 +10,7 @@
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^10.0",
         "laravel/sanctum": "^3.2",
-        "laravel/telescope": "^4.8",
+        "laravel/telescope": "^5.7",
         "laravel/tinker": "^2.7"
     },
     "require-dev": {

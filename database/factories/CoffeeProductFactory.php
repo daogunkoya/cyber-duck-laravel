@@ -13,6 +13,8 @@ class CoffeeProductFactory extends Factory
         return [
             'name' => fake()->unique()->words(2, true),
             'description' => fake()->sentence(),
+            'profit_margin' => 0.25,
+            'is_active' => true
         ];
     }
 
@@ -21,6 +23,8 @@ class CoffeeProductFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'name' => 'Gold Coffee',
             'description' => "Gold Coffee is a premium coffee with a rich and complex flavor profile.",
+            'profit_margin' => 0.25,
+            'is_active' => true
         ]);
     }
 
@@ -29,6 +33,9 @@ class CoffeeProductFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'name' => 'Arabic Coffee',
             'description' => "Arabic Coffee is a bold and aromatic coffee with a rich and complex flavor profile.",
+            'profit_margin' => 0.15,
+            'is_active' => true
+
         ]);
     }
 }

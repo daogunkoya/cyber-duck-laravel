@@ -18,8 +18,10 @@ class CoffeeProduct extends Model
      */
     protected $fillable = [
         'name',
-       // 'profit_margin',
-        'description',
+        'description', 
+        'profit_margin',
+        'is_active'
+
     ];
 
     /**
@@ -28,7 +30,9 @@ class CoffeeProduct extends Model
      * @var array
      */
     protected $casts = [
-        'profit_margin' => 'decimal:2',
+        'profit_margin' => 'float',
+        'is_active' => 'bool'
+
     ];
 
     /**
