@@ -1,95 +1,82 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('New ☕️ Sales') }}
+            Coffee Sales
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12" x-data="coffeeSales()" x-init="init()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-                    <form id="coffee-sale-form" method="POST" action="{{ route('coffee-sales.store') }}">
-                        @csrf
+                    <!-- Form with all elements in one row -->
+                    <div class="flex items-end gap-4 mb-8">
+                        <!-- Product Select -->
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Product Selection -->
-                            <div>
-                                <x-input-label for="coffee_product_id" :value="__('Coffee Product')" />
-                                <select id="coffee_product_id" name="coffee_product_id" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
-                                    @foreach($products as $product)
-                                        <option value="{{ $product->id }}">
-                                            {{ $product->name }} ({{ $product->profit_margin_percentage }}% margin)
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <x-input-error :messages="$errors->get('coffee_product_id')" class="mt-2" />
-                            </div>
-
-                            <!-- Quantity -->
-                            <div>
-                                <x-input-label for="quantity" :value="__('Quantity')" />
-                                <x-text-input id="quantity" name="quantity" type="number" min="1" class="mt-1 block w-full" 
-                                    value="{{ old('quantity', 1) }}" required />
-                                <x-input-error :messages="$errors->get('quantity')" class="mt-2" />
-                            </div>
-
-                            <!-- Unit Cost -->
-                            <div>
-                                <x-input-label for="unit_cost" :value="__('Unit Cost (£)')" />
-                                <x-text-input id="unit_cost" name="unit_cost" type="number" step="0.01" min="0.01" 
-                                    class="mt-1 block w-full" value="{{ old('unit_cost') }}" required />
-                                <x-input-error :messages="$errors->get('unit_cost')" class="mt-2" />
-                            </div>
-
-                            <!-- Results (will be populated via JavaScript) -->
-                            <div class="md:col-span-2 bg-gray-50 p-4 rounded-lg">
-                                <h3 class="text-lg font-medium text-gray-900">{{ __('Calculation Results') }}</h3>
-                                <div class="mt-4 space-y-2">
-                                    <p class="text-sm"><span class="font-medium">{{ __('Cost:') }}</span> <span id="cost-result">£0.00</span></p>
-                                    <p class="text-sm"><span class="font-medium">{{ __('Selling Price:') }}</span> <span id="price-result">£0.00</span></p>
-                                </div>
+                        
+                        <!-- Quantity Input -->
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                            <input type="number" 
+                                   x-model="form.quantity"
+                                   @input="calculateSellingPrice()"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" 
+                                   required min="1" value="1">
+                        </div>
+                        
+                        <!-- Unit Cost Input -->
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700">Unit Cost (£)</label>
+                            <input type="number" step="0.01" 
+                                   x-model="form.unit_cost"
+                                   @input="calculateSellingPrice()"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" 
+                                   required min="0.01" value="0.00">
+                        </div>
+                        
+                        <!-- Selling Price Display -->
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700">Selling Price (£)</label>
+                            <div class="mt-1 block w-full p-2 rounded-md bg-gray-100">
+                                <span x-text="sellingPrice.toFixed(2)">0.00</span>
                             </div>
                         </div>
-
-                        <div class="flex items-center justify-end mt-6">
-                            <x-primary-button type="button" id="calculate-btn">
-                                {{ __('Calculate') }}
-                            </x-primary-button>
-                            <x-primary-button type="submit" class="ml-3" id="save-btn" disabled>
-                                {{ __('Record Sale') }}
-                            </x-primary-button>
+                        
+                        <!-- Record Sale Button -->
+                        <div class="flex-1 pb-[20px]">
+                            <button @click="recordSale()"
+                                    :disabled="isSubmitting"
+                                    class="w-full h-[42px] inline-flex justify-center items-center mt-5 py-2 px-4  border-2 border-indigo-700 shadow-sm text-sm font-medium rounded-md text-gray-800 bg-indigo-200 hover:bg-indigo-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                    x-text="isSubmitting ? 'Processing...' : 'Record Sale'">
+                            </button>
                         </div>
-                    </form>
+                    </div>
 
-                    <!-- Sales History -->
-                    <div class="mt-12">
-                        <h3 class="text-lg font-medium text-gray-900">{{ __('Recent Sales') }}</h3>
-                        <div class="mt-4 overflow-x-auto">
+                    <!-- Sales Table -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4 mt-3">Previous Sales</h3>
+                        <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Product') }}</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Quantity') }}</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Unit Cost') }}</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Selling Price') }}</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Date') }}</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Price (£)</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selling Price (£)</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sold At</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    @forelse($sales as $sale)
+                                    <template x-for="sale in sales" :key="sale.id">
                                         <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $sale->product->name }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $sale->quantity }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">£{{ number_format($sale->unit_cost, 2) }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">£{{ number_format($sale->selling_price, 2) }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $sale->created_at->format('d/m/Y H:i') }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="sale.quantity"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="sale.unit_cost"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="sale.selling_price"></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="new Date(sale.created_at).toLocaleString()"></td>
                                         </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">{{ __('No sales recorded yet.') }}</td>
-                                        </tr>
-                                    @endforelse
+                                    </template>
+                                    <tr x-show="sales.length === 0">
+                                        <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No sales recorded yet.</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -99,45 +86,81 @@
         </div>
     </div>
 
-    @push('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('coffee-sale-form');
-            const calculateBtn = document.getElementById('calculate-btn');
-            const saveBtn = document.getElementById('save-btn');
-            
-            calculateBtn.addEventListener('click', async function() {
-                const formData = new FormData(form);
+        function coffeeSales() {
+            return {
+                coffeeProducts: @json($coffeeProducts),
+                sales: @json($sales),
+                form: {
+                    product_id: '',
+                    quantity: 1,
+                    unit_cost: 0.00
+                },
+                sellingPrice: 0.00,
+                isSubmitting: false,
                 
-                try {
-                    const response = await fetch('{{ route("coffee-sales.calculate") }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            coffee_product_id: formData.get('coffee_product_id'),
-                            quantity: formData.get('quantity'),
-                            unit_cost: formData.get('unit_cost')
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        document.getElementById('cost-result').textContent = '£' + data.data.cost.toFixed(2);
-                        document.getElementById('price-result').textContent = '£' + data.data.selling_price.toFixed(2);
-                        saveBtn.disabled = false;
-                    } else {
-                        alert(data.message || 'Calculation failed');
+                init() {
+                    if (this.coffeeProducts.length > 0) {
+                        this.form.product_id = this.coffeeProducts[0].id;
                     }
-                } catch (error) {
-                    alert('An error occurred during calculation');
+                    this.calculateSellingPrice();
+                },
+                
+                calculateSellingPrice() {
+                   
+                    const profitMargin = {{ config('coffee.profit_margin') }};
+                    const quantity = parseFloat(this.form.quantity) || 0;
+                    const unitCost = parseFloat(this.form.unit_cost) || 0;
+                    const shippingCost = {{ config('coffee.shipping_cost') }};
+                    
+                    const cost = quantity * unitCost;
+                    this.sellingPrice = (cost / (1 - profitMargin)) + shippingCost;
+                },
+                
+                async recordSale() {
+                    this.isSubmitting = true;
+                    
+                    try {
+                        const response = await fetch("{{ route('sales.store') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({
+                                coffee_product_id: this.form.product_id,
+                                quantity: this.form.quantity,
+                                unit_cost: this.form.unit_cost,
+                                selling_price: parseFloat(this.sellingPrice.toFixed(2))
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.sales.unshift({
+                                id: data.sale.id,
+                                coffee_product: {
+                                    name: data.product_name
+                                },
+                                quantity: data.sale.quantity,
+                                unit_cost: data.sale.unit_cost,
+                                selling_price: data.sale.selling_price,
+                                created_at: data.sale.created_at
+                            });
+                            
+                            this.form.quantity = 1;
+                            this.form.unit_cost = 0.00;
+                            this.calculateSellingPrice();
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                    } finally {
+                        this.isSubmitting = false;
+                    }
                 }
-            });
-        });
+            };
+        }
     </script>
-    @endpush
 </x-app-layout>

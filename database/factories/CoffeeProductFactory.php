@@ -11,9 +11,7 @@ class CoffeeProductFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(), // Add this
             'name' => fake()->unique()->words(2, true),
-            'profit_margin' => fake()->randomFloat(2, 0.1, 0.4),
             'description' => fake()->sentence(),
         ];
     }
@@ -22,7 +20,7 @@ class CoffeeProductFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'Gold Coffee',
-            'profit_margin' => 0.25,
+            'description' => "Gold Coffee is a premium coffee with a rich and complex flavor profile.",
         ]);
     }
 
@@ -30,7 +28,7 @@ class CoffeeProductFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'Arabic Coffee',
-            'profit_margin' => 0.15,
+            'description' => "Arabic Coffee is a bold and aromatic coffee with a rich and complex flavor profile.",
         ]);
     }
 }

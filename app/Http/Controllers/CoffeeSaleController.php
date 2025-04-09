@@ -1,43 +1,83 @@
 <?php
 
-// app/Http/Controllers/CoffeeSaleController.php
 namespace App\Http\Controllers;
 
-use App\Data\CoffeeSaleData;
 use App\Http\Requests\StoreCoffeeSaleRequest;
+use App\Models\CoffeeProduct;
 use App\Models\CoffeeSale;
-use App\Services\CoffeePriceCalculator;
+use App\Repositories\CoffeeSaleRepository;
+use App\Services\PriceCalculationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
+use Illuminate\Database\Eloquent\Collection;
 
 class CoffeeSaleController extends Controller
 {
     public function __construct(
-        private CoffeePriceCalculator $calculator
+        private CoffeeSaleRepository $saleRepository,
+        private PriceCalculationService $priceCalculator
     ) {}
 
-    public function calculate(StoreCoffeeSaleRequest $request): JsonResponse
+    public function index(): View
     {
-        $saleData = CoffeeSaleData::from($request->validated());
-        $calculation = $this->calculator->calculate($saleData);
-
-        return response()->json([
-            'data' => array_merge($saleData->toArray(), $calculation)
+        return view('coffee_sales', [
+            'coffeeProducts' => CoffeeProduct::all(),
+            'sales' => $this->formatSalesData(
+                $this->saleRepository->getAllSales()
+            ),
+            'header' => ''
         ]);
     }
 
-    public function store(StoreCoffeeSaleRequest $request): JsonResponse
+    public function store(StoreCoffeeSaleRequest $request): JsonResponse|RedirectResponse
     {
-        $saleData = CoffeeSaleData::from($request->validated());
-        $calculation = $this->calculator->calculate($saleData);
+        $product = CoffeeProduct::findOrFail($request->coffee_product_id);
+        
+        $sellingPrice = $this->priceCalculator->calculateSellingPrice(
+            $request->quantity,
+            $request->unit_cost
+        );
 
-        $sale = Auth::user()->coffeeSales()->create(array_merge(
-            $saleData->toArray(),
-            $calculation
-        ));
+        $sale = $this->saleRepository->createSale([
+            'coffee_product_id' => $product->id,
+            'quantity' => $request->quantity,
+            'unit_cost' => $request->unit_cost,
+            'selling_price' => $sellingPrice,
+            'user_id' => auth()->id()
+        ]);
 
-        return response()->json([
-            'data' => $sale,
-        ], 201);
+        return $this->createResponse($request, $sale, $sellingPrice);
+    }
+
+    private function formatSalesData(Collection $sales): array
+    {
+        return $sales->map(fn ($sale) => [
+            'id' => $sale->id,
+            'product_name' => $sale->coffeeProduct->name,
+            'quantity' => $sale->quantity,
+            'unit_cost' => $sale->unit_cost,
+            'selling_price' => $sale->selling_price,
+            'created_at' => $sale->created_at->format('Y-m-d H:i'),
+        ])->all();
+    }
+
+    private function createResponse(
+        StoreCoffeeSaleRequest $request,
+        CoffeeSale $sale,
+        float $sellingPrice
+    ): JsonResponse|RedirectResponse {
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'sale' => $sale,
+                'product_name' => $sale->coffeeProduct->name,
+                'created_at' => $sale->created_at->toISOString()
+            ]);
+        }
+
+        return redirect()
+            ->route('sales.index')
+            ->with('success', 'Sale recorded successfully! Selling price: £' . number_format($sellingPrice, 2));
     }
 }

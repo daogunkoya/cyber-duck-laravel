@@ -44,7 +44,7 @@ class CoffeeSale extends Model
     /**
      * Relationship with coffee product
      */
-    public function product(): BelongsTo
+    public function coffeeProduct(): BelongsTo
     {
         return $this->belongsTo(CoffeeProduct::class, 'coffee_product_id');
     }

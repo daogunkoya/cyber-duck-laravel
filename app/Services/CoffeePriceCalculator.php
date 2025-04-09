@@ -1,41 +1,39 @@
 <?php
-// app/Services/CoffeePriceCalculator.php
+
 namespace App\Services;
 
-use App\Data\CoffeeSaleData;
-use App\Models\CoffeeProduct;
-use App\Exceptions\CoffeeCalculationException;
+use App\Services\Pricing\Contracts\PricingStrategy;
 
-class CoffeePriceCalculator
+final readonly class CoffeePriceCalculator
 {
-    private const SHIPPING_COST = 10.00;
-
-    public function calculate(CoffeeSaleData $saleData): array
+    /** @var PricingStrategy[] */
+    private array $strategies;
+    
+    public function __construct(PricingStrategy ...$strategies)
     {
-        $product = CoffeeProduct::findOrFail($saleData->coffee_product_id);
-        
-        $cost = $this->calculateCost($saleData->quantity, $saleData->unit_cost);
-        $sellingPrice = $this->calculateSellingPrice($cost, $product->profit_margin);
-
-        return [
-            'cost' => $cost,
-            'selling_price' => $sellingPrice,
-        ];
+        $this->strategies = $strategies;
     }
-
-    private function calculateCost(int $quantity, float $unitCost): float
+    
+    public function calculateCost(int $quantity, float $unitCost): float
     {
         return $quantity * $unitCost;
     }
-
-    private function calculateSellingPrice(float $cost, float $profitMargin): float
-    {
-        if ($profitMargin <= 0 || $profitMargin >= 1) {
-            throw CoffeeCalculationException::invalidProfitMargin();
-        }
     
-        $price = ($cost / (1 - $profitMargin)) + self::SHIPPING_COST;
+    public function calculateSellingPrice(float $cost, string $productType): float
+    {
+        $strategy = $this->getStrategyFor($productType);
         
-        return round($price, 2);
+        return $strategy->calculate($cost);
+    }
+    
+    private function getStrategyFor(string $productType): PricingStrategy
+    {
+        foreach ($this->strategies as $strategy) {
+            if ($strategy->supports($productType)) {
+                return $strategy;
+            }
+        }
+        
+        throw new \InvalidArgumentException("No pricing strategy for product type: $productType");
     }
 }

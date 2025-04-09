@@ -1,0 +1,28 @@
+<?php
+
+namespace App\DTO;
+
+use App\Models\CoffeeSale;
+
+
+
+class BankDto
+{
+    public function __construct(
+        public int $coffeeProductId,
+        public int $quantity,
+        public float $unitCost,
+        public int $userId,
+
+    ) {}
+
+    public static function fromEloquentModel(CoffeeSale $coffeeSale): self
+    {
+        return new self(
+            $coffeeSale->coffee_product_id,
+            $coffeeSale->quantity,
+            $coffeeSale->unit_cost,
+            $coffeeSale->user_id,
+        );
+    }
+}

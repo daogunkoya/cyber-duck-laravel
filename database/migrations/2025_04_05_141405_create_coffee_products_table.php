@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('coffee_products', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->decimal('profit_margin', 5, 2); // Stored as decimal (e.g., 0.25)
             $table->string('description')->nullable();
             $table->timestamps();
         });
